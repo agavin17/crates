@@ -8,15 +8,12 @@ class Flag extends Component {
 
 
     render() {
-        if (this.props.artistImage) {
-            // var centerpicture = <img id="centerPic" src={this.props.artistImage} />
-            // var spotifylink = <a href={this.props.spotifyUrl}><img id='spotify' src='http://markbmusic.com/wp-content/uploads/2016/10/spotifybutton1.png' /></a>
-            
+        if (this.props.flag) {
+            var flaggy = <div id='flagdiv'> <img id='flag' src={this.props.flag} /> </div>
         }
         return (
             <div>
-                <div id='flagdiv'> <img id='flag' src={this.props.flag} /> </div>
-
+                {flaggy}
             </div>
 
         );
