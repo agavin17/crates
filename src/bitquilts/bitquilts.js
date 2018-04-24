@@ -7,9 +7,9 @@ import './bitquilts.css';
 import CenterText from "../center/center.js";
 import Album from "../album/album.js";
 import classnames from 'classnames';
-import Flag from '../flag/flag.js'
-
-var Chance = require('chance');
+import Flag from '../flag/flag.js';
+import Profile from '../profile/profile.js';
+import Chance from 'chance';
 
 //Generate 10 unique numbers from 1-100 
 var chance = new Chance();
@@ -34,20 +34,25 @@ class Bitquilts extends Component {
             locationData: {},
             fadeIn: false,
             artistSummary: "Select An Album or Artist To Load Info",
+            welcomeCountry: "Enter a country to get started",
+            welcomeArtist: "Enter an artist name to get started",
+            welcomeUser: "Enter a valid Last.FM username to get started",
+            welcomeTag: "Enter a genre or keyword to get started",
             artistName: "",
             spotifyUrl: "",
             albumName: "",
             artistImage: "",
             flag: null,
+            profilePicture: "",
             listeners: "",
-            welcome: "Enter a country to get started!",
             similardata: {},
             tab1Visible: false,
             tab2Visible: false,
             tab3Visible: false,
             tab4Visible: false
         }
-        // this.toggle = this.toggle.bind(this);
+        //ALL DA BINDS!!!
+        this.toggle = this.toggle.bind(this);
         this.artistInfo = this.artistInfo.bind(this);
         this.setUser = this.setUser.bind(this);
         this.shuffle = this.shuffle.bind(this);
@@ -57,12 +62,6 @@ class Bitquilts extends Component {
     }
 
     //FUNCTIONS!!!
-
-    // toggle() {
-    //     this.setState({
-    //         fadeIn: !this.state.fadeIn
-    //     });
-    // }
 
     toggle(tab) {
         if (this.state.activeTab !== tab) {
@@ -74,7 +73,7 @@ class Bitquilts extends Component {
 
     //Shuffle function (gathers new records based on random numbers)
     shuffle() {
-        randomNumbers = chance.unique(chance.integer, 10, { min: 0, max: 99 });
+        randomNumbers = chance.unique(chance.integer, 10, { min: 0, max: 100 });
         randNum1 = randomNumbers[0]
         randNum2 = randomNumbers[1]
         randNum3 = randomNumbers[2]
@@ -90,32 +89,31 @@ class Bitquilts extends Component {
 
     //Set Username from Last.FM based on input value
     setUser(input) {
-        axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${input}&period=3month&limit=101&api_key=5bc98df467c4541a1787d433095c0db0&format=json`).then((response) => {
-            // axios.get(`http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=${input}&api_key=5bc98df467c4541a1787d433095c0db0&format=json`).then((response) => {
+        Promise.all([axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${input}&period=3month&limit=101&api_key=5bc98df467c4541a1787d433095c0db0&format=json`), axios.get(`http://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${input}&api_key=5bc98df467c4541a1787d433095c0db0&format=json`)])
+        .then((responses) => {
             this.setState({
-                data: response.data,
-                fadeIn: !this.state.fadeIn,
+                data: responses[0].data,
+                profilePicture: responses[1].data.user.image[1]['#text'],
                 tab1Visible: true,
                 tab2Visible: false,
-                tab3Visible: false
+                tab3Visible: false,
+                tab4Visible: false,
+                welcomeUser: null
             })
         })
     }
 
     //Get similar artists from Last.FM based on input value
     setSimilar(input) {
-        axios.get(`http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=${input}&api_key=5bc98df467c4541a1787d433095c0db0&format=json`).then((response) => {
-            console.log(response)
-
+       axios.get(`http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=${input}&limit=101&api_key=5bc98df467c4541a1787d433095c0db0&format=json`).then((response) => {
             this.setState({
                 data: response.data,
-                fadeIn: !this.state.fadeIn,
                 tab3Visible: true,
                 tab1Visible: false,
-                tab2Visible: false
-
+                tab2Visible: false,
+                tab4Visible: false,
+                welcomeArtist: null
             })
-
         })
     }
 
@@ -126,14 +124,16 @@ class Bitquilts extends Component {
                 this.setState({
                     data: responses[0].data,
                     flag: responses[1].data[0].flag,
-                    welcome: null,
+                    welcomeCountry: null,
                     tab2Visible: true,
                     tab1Visible: false,
-                    tab3Visible: false
+                    tab3Visible: false,
+                    tab4Visible: false,
                 })
             })
     }
 
+    //Gather similar artists based on tags/genres input
     setTag(input) {
         axios.get(`http://ws.audioscrobbler.com/2.0/?method=tag.gettopartists&tag=${input}&limit=101&api_key=5bc98df467c4541a1787d433095c0db0&format=json`).then((response) => {
             this.setState({
@@ -141,10 +141,10 @@ class Bitquilts extends Component {
                 tab4Visible: true,
                 tab3Visible: false,
                 tab2Visible: false,
-                tab1Visible: false
+                tab1Visible: false,
+                welcomeTag: null
             })
         })
-        console.log(this.state.data.topartists)
     }
 
     //Gather artist info based on selected album from Last.FM
@@ -155,7 +155,6 @@ class Bitquilts extends Component {
                 artistName: response.data.artist.name,
                 artistImage: response.data.artist.image[2]['#text'],
                 listeners: response.data.artist.stats.listeners,
-
             })
             this.spotifyAlbumSearch()
         })
@@ -173,14 +172,13 @@ class Bitquilts extends Component {
     }
 
     render() {
+
         if (this.state.data.topalbums) {
             var shufflebutton = <Button color='info' onClick={this.shuffle}>Shuffle</Button>
             var artistList = <div>
-                {/* <Fade in={this.state.fadeIn}>  */}
                 <table id='matrix'>
                     <tbody>
                         <tr>
-                            {/* <Album data={this.state.data} artistSummary={this.state.artistSummary}/> */}
                             <div className='cellbg'><td> <Button color='dark' onClick={() => this.artistInfo(this.state.data.topalbums.album[randNum1].artist.name)}><img src={this.state.data.topalbums.album[randNum1].image[2]["#text"]} /> </Button> <div><p className="album"> {this.state.data.topalbums.album[randNum1].artist.name} - {this.state.data.topalbums.album[randNum1].name}</p></div> </td></div>
                             <td> <Button color='dark' onClick={() => this.artistInfo(this.state.data.topalbums.album[randNum2].artist.name)}><img src={this.state.data.topalbums.album[randNum2].image[2]["#text"]} /> </Button> <p className="album"> {this.state.data.topalbums.album[randNum2].artist.name} - {this.state.data.topalbums.album[randNum2].name}</p></td>
                             <div className='cellbg'> <td> <Button color='dark' onClick={() => this.artistInfo(this.state.data.topalbums.album[randNum3].artist.name)}><img src={this.state.data.topalbums.album[randNum3].image[2]["#text"]} /> </Button> <p className="album"> {this.state.data.topalbums.album[randNum3].artist.name} - {this.state.data.topalbums.album[randNum3].name}</p></td></div>
@@ -191,33 +189,14 @@ class Bitquilts extends Component {
                                 <CenterText data={this.state.data} artistSummary={this.state.artistSummary} artistName={this.state.artistName} artistImage={this.state.artistImage} spotifyUrl={this.state.spotifyUrl} listeners={this.state.listeners} />
                             </td>
                             <div className='cellbg'> <td> <Button color='dark' onClick={() => this.artistInfo(this.state.data.topalbums.album[randNum5].artist.name)}><img src={this.state.data.topalbums.album[randNum5].image[2]["#text"]} /></Button> <p className="album"> {this.state.data.topalbums.album[randNum5].artist.name} - {this.state.data.topalbums.album[randNum5].name}</p></td></div>
-
-                            {/* <td><img src={this.state.data.topalbums.album[randNum4].image[3]["#text"]} /></td>
-                    <td><img src={this.state.data.topalbums.album[randNum5].image[3]["#text"]} /></td>
-                    <td><img src={this.state.data.topalbums.album[randNum6].image[3]["#text"]} /></td> */}
-
-                            {/* <td><img src={this.state.data.similarartists.artist[randNum4].image[4]["#text"]} /></td>
-                    <td><img src={this.state.data.similarartists.artist[randNum5].image[4]["#text"]} /></td>
-                    <td><img src={this.state.data.similarartists.artist[randNum6].image[4]["#text"]} /></td> */}
                         </tr>
                         <tr>
                             <div className='cellbg'>  <td> <Button color='dark' onClick={() => this.artistInfo(this.state.data.topalbums.album[randNum6].artist.name)}><img src={this.state.data.topalbums.album[randNum6].image[2]["#text"]} /></Button> <p className="album"> {this.state.data.topalbums.album[randNum6].artist.name} - {this.state.data.topalbums.album[randNum6].name}</p></td></div>
                             <td> <Button color='dark' onClick={() => this.artistInfo(this.state.data.topalbums.album[randNum7].artist.name)}><img src={this.state.data.topalbums.album[randNum7].image[2]["#text"]} /> </Button><p className="album"> {this.state.data.topalbums.album[randNum7].artist.name} - {this.state.data.topalbums.album[randNum7].name}</p></td>
                             <div className='cellbg'>  <td> <Button color='dark' onClick={() => this.artistInfo(this.state.data.topalbums.album[randNum8].artist.name)}><img src={this.state.data.topalbums.album[randNum8].image[2]["#text"]} /></Button><p className="album"> {this.state.data.topalbums.album[randNum8].artist.name} - {this.state.data.topalbums.album[randNum8].name}</p></td></div>
-
-                            {/* <td><img src={this.state.data.topalbums.album[randNum7].image[3]["#text"]} /></td>
-                    <td><img src={this.state.data.topalbums.album[randNum8].image[3]["#text"]} /></td>
-                    <td><img src={this.state.data.topalbums.album[randNum9].image[3]["#text"]} /></td> */}
-
-                            {/* <td><img src={this.state.data.similarartists.artist[randNum7].image[4]["#text"]} /></td>
-                    <td><img src={this.state.data.similarartists.artist[randNum8].image[4]["#text"]} /></td>
-                    <td><img src={this.state.data.similarartists.artist[randNum9].image[4]["#text"]} /></td> */}
                         </tr>
                     </tbody>
                 </table>
-                {/* </Fade> */}
-                {/* <Button onClick={this.spotifyAlbumSearch}>spotify</Button> */}
-
             </div>
         } else if (this.state.data.tracks) {
             var shufflebutton = <Button color='info' onClick={this.shuffle}>Shuffle</Button>
@@ -330,26 +309,21 @@ class Bitquilts extends Component {
                             Genre Crates
             </NavLink>
                     </NavItem>
-
                 </Nav>
-
-
                 <TabContent activeTab={this.state.activeTab}>
                     <TabPane tabId="1">
                         <Row>
                             <Col sm="12">
 
                                 <div className='yourmom'>
+                                <Profile profile={this.state.profilePicture} />
                                     <input id="artistName" type="text" placeholder="Username" />  <Button color='info'
                                         id="clickme" onClick={() => this.setUser(document.getElementById("artistName").value)}>Browse</Button> {shufflebutton}
                                 </div>
                                 <div id='quiltcontainer'>
-                                    <h5>Enter a Last.FM user account to start diggin'!</h5>
-                                    {/* <div id ='heyyou' className={this.state.visible?'fadeIn':'fadeOut'}> <h1>hey you!! !</h1>  </div> */}
+                                    <div id='welcome'>{this.state.welcomeUser}</div>
                                     <div className={this.state.tab1Visible ? 'fadeIn' : 'fadeOut'}> {artistList} </div>
                                 </div>
-
-
                             </Col>
                         </Row>
                     </TabPane>
@@ -357,18 +331,17 @@ class Bitquilts extends Component {
                         <Row>
                             <Col sm="12">
                                 <div className='yourmom'>
+                                    <Flag flag={this.state.flag} />
                                     <input id="country" type="text" placeholder="Country (required)" />
-                                    <input id="location" type="text" placeholder="City (optional)" />  <Button color='info'
-                                        id="clickme" onClick={() => this.setCountry(document.getElementById("country").value, document.getElementById("location").value)}>Browse</Button> {shufflebutton}
-                                    <div className={this.state.tab2Visible ? 'fadeIn' : 'fadeOut'}> <Flag flag={this.state.flag} /> </div>
+                                    <Button color='info'
+                                        id="clickme" onClick={() => this.setCountry(document.getElementById("country").value)}>Browse</Button> {shufflebutton}
+                                    <div className={this.state.tab2Visible ? 'fadeIn' : 'fadeOut'}>  </div>
 
                                 </div>
                                 <div id='quiltcontainer'>
-                                    <div id='welcome'>{this.state.welcome}</div>
+                                    <div id='welcome'>{this.state.welcomeCountry}</div>
                                     <div className={this.state.tab2Visible ? 'fadeIn' : 'fadeOut'}>{countryArtistList} </div>
                                 </div>
-
-
                             </Col>
                         </Row>
                     </TabPane>
@@ -381,11 +354,9 @@ class Bitquilts extends Component {
 
                                 </div>
                                 <div id='quiltcontainer'>
-                                    <div id='welcome'>{this.state.welcome}</div>
+                                    <div id='welcome'>{this.state.welcomeArtist}</div>
                                     <div className={this.state.tab3Visible ? 'fadeIn' : 'fadeOut'}> {similarArtistList} </div>
                                 </div>
-
-
                             </Col>
                         </Row>
                     </TabPane>
@@ -398,20 +369,16 @@ class Bitquilts extends Component {
                                         id="clickme" onClick={() => this.setTag(document.getElementById("tag").value)}>Browse</Button> {shufflebutton}
                                 </div>
                                 <div id='quiltcontainer'>
-                                    <h5>Randomly Generated Artists For Thirsty Ears</h5>
-                                    {/* <div id ='heyyou' className={this.state.visible?'fadeIn':'fadeOut'}> <h1>hey you!! !</h1>  </div> */}
+                                    <div id='welcome'>{this.state.welcomeTag}</div>
                                     <div className={this.state.tab4Visible ? 'fadeIn' : 'fadeOut'}> {topArtistList} </div>
                                 </div>
                             </Col>
                         </Row>
                     </TabPane>
-
-
                 </TabContent>
                 {/* <Jumbo /> */}
             </div>
         );
     }
 }
-
 export default Bitquilts;
