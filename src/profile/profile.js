@@ -8,7 +8,7 @@ class Profile extends Component {
     }
     render() {
         if (this.props.profile) {
-            var profilePicture = <div id='profileDiv'> <img id='profilePic' src={this.props.profile} /> </div>
+            var profilePicture = <div id='profileDiv'> User: {this.props.username} <img id='profilePic' src={this.props.profile} /> </div>
         }
         return (
             <div>

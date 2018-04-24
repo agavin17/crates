@@ -44,6 +44,7 @@ class Bitquilts extends Component {
             artistImage: "",
             flag: null,
             profilePicture: "",
+            username: "",
             listeners: "",
             similardata: {},
             tab1Visible: false,
@@ -94,6 +95,7 @@ class Bitquilts extends Component {
             this.setState({
                 data: responses[0].data,
                 profilePicture: responses[1].data.user.image[1]['#text'],
+                username: responses[1].data.user.name,
                 tab1Visible: true,
                 tab2Visible: false,
                 tab3Visible: false,
@@ -316,7 +318,7 @@ class Bitquilts extends Component {
                             <Col sm="12">
 
                                 <div className='yourmom'>
-                                <Profile profile={this.state.profilePicture} />
+                                <Profile profile={this.state.profilePicture} username={this.state.username} />
                                     <input id="artistName" type="text" placeholder="Username" />  <Button color='info'
                                         id="clickme" onClick={() => this.setUser(document.getElementById("artistName").value)}>Browse</Button> {shufflebutton}
                                 </div>
@@ -365,7 +367,7 @@ class Bitquilts extends Component {
                             <Col sm="12">
 
                                 <div className='yourmom'>
-                                    <input id="tag" type="text" placeholder="Username" />  <Button color='info'
+                                    <input id="tag" type="text" placeholder="Genre/Tag" />  <Button color='info'
                                         id="clickme" onClick={() => this.setTag(document.getElementById("tag").value)}>Browse</Button> {shufflebutton}
                                 </div>
                                 <div id='quiltcontainer'>

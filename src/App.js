@@ -15,6 +15,7 @@ class App extends Component {
         </header> */}
         {/* <Navigation /> */}
         <Bitquilts />
+        {/* <img id='landingpic' src='https://static9.depositphotos.com/1004996/1111/v/950/depositphotos_11119809-stock-illustration-music-background.jpg'/> */}
         <Footer />
       </div>
     );

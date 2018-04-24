@@ -5,7 +5,7 @@ class Footer extends Component {
     render() {
         return (
             <div>
-               <p id='footerdiv'>  something something dark side </p>
+               <p id='footerdiv'>  Copyright 2018 All right reserved </p>
             </div>
         );
     }
